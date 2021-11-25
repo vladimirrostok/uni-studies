@@ -1,0 +1,560 @@
+---
+title: "Autovanuse ennustamine kindlustusjuhtumi andmete järgi"
+subtitle: "Projekt õppeaines MEM5210 Mitmemõõtmeline statistiline analüüs"
+author: "<br>Koostajad: Vadim Aland, Vladimir Andrianov"
+date: "Esitatud: 11.01.2021"
+output: 
+  html_document:
+    toc: true
+    toc_depth: 4
+    toc_float: 
+      collapsed: false
+    number_sections: true
+    theme: default
+    code_folding: hide
+---
+# Sissejuhatus
+
+## Andmestiku kirjeldus
+
+Autorid valisid oma projekti jaoks andmestiku, mis sisaldab auto kindlustus juhtumite andmeid. Andmestik on võetud Kaggle.com veebilehe anmdestikude andmebaasist.<br> 
+Andmestik on .csv formaadis ja sisaldab 24 tunnust ja 7657 objekti.<br>
+<br><br>
+Tunnused:<br>
+INDEX - identification variable (do not use)<br>
+TARGET_FLAG - was car in a crash 1=yes 0=no<br>
+TARGET_AMT - if car was in a crash, what was the cost<br>
+AGE - age of driver<br>
+BLUEBOOK - value of vehicle<br>
+CAR_AGE - vehicle age<br>
+CAR_TYPE - type of car<br>
+CAR_USE - vehicle use<br>
+CLM_FREQ - # claim past 5 years<br>
+EDUCATION - max education level<br>
+HOMEKIDS - # children at home<br>
+HOME_VAL - home value<br>
+INCOME - income<br>
+JOB - job cathegory<br>
+KIDSDRIV - # driving children<br>
+MSTATUS - marital status<br>
+MVR_PTS - motor vehicle record points<br>
+OLDCLAIM - total claims past 5 years<br>
+PARENT1 - single parent<br>
+RED_CAR - a red car<br>
+REVOKED - licence revoked past 7 years<br>
+SEX - gender<br>
+TIF - time in force<br>
+TRAVTIME - distance to work<br>
+URBANICITY - home/work area<br>
+YOJ - years on job
+
+## Uurimiseesmärk
+
+Projekti peaeesmärk on rakendada mitmemõõtmlise statistlise analüüsi õppeaines omandatatud meetodite rakendamist reaalsete andmete peal ning teha järeldusi ja tõlgendada neid.
+
+## Tööhüpoteesid
+
+Kui auto sattus avariisse, faktorite järgi võib ennustada mis vanusegruppis auto on.
+
+# Uuringu käik
+
+## Andmestiku esmaanalüüs
+
+Loeme andmed, kustutame kõik read kus on puuduvaid andmeid
+```{r setup, include=FALSE}
+carClaims<-read.csv("car_insurance_claim.csv",sep = ",", na.strings=c("", "","NA"), header = T)
+```
+Eemaldame ID, BIRTH ja CLAIM_FLAG tunnused. Kasutame ainult need andmed, kus CLM_AMT ei ole tühi
+```{r warning=F}
+carClaims = carClaims[c(2,4:25,27)]
+carClaims = na.omit(carClaims)
+```
+Vaatame andmestiku suurust
+```{r warning=F}
+dim(carClaims)
+```
+Vaatame andmestiku struktuuri
+```{r warning=F}
+str(carClaims)
+```
+Vaatame andmestiku algust
+```{r warning=F}
+head(carClaims)
+```
+
+## Andmete puhastamine
+
+Konverteerime tüübid
+```{r warning=F}
+carClaims <- type.convert(carClaims)
+```
+Eemaldame kõik $ märgid andmestikust
+```{r warning=F}
+indx <- sapply(carClaims, is.factor) 
+carClaims[indx] <- lapply(carClaims[indx], function(x) 
+                            as.factor(gsub("\\$", "", x)))
+```
+Vahetame kõik komad "," punktide "." vastu
+```{r warning=F}
+indx <- sapply(carClaims, is.factor) 
+carClaims[indx] <- lapply(carClaims[indx], function(x) 
+                            as.factor(gsub(",", "", x)))
+```
+Eemaldame kõik keeldud nõued (claim_amount=0)
+```{r warning=F}
+carClaims<-carClaims[!(carClaims$CLM_AMT==0),]
+```
+Uuendame tüübid uuesti, faktorid muutuvad arvulisteks tunnusteks
+```{r warning=F}
+carClaims <- type.convert(carClaims)
+```
+Uurime andmestiku ülevaade
+```{r warning=F}
+str(carClaims)
+```
+Uurime andmestiku kokkuvõtet
+```{r warning=F}
+summary(carClaims)
+```
+Eemaldame ekslikud andmed. Tühjad auto vanused ja negatiivsed auto vanused
+```{r warning=F}
+carClaims<-carClaims[!(carClaims$CAR_AGE<1),]
+```
+Sorteerime tegurid ja täisarvud erinevatesse andmestikutesse
+```{r warning=F}
+carClaimsFactors <- carClaims[,c(6,8:11,13,16,17,20,24)]
+carClaimsNums <- carClaims[,c(1:5,7,12,14,15,18,19,21:23)]
+str(carClaimsNums)
+str(carClaimsFactors)
+```
+
+## Seoste analüüs
+
+```{r fig.width=20, fig.height=20, warning=FALSE}
+library(psych)
+cor.plot(carClaimsNums)
+```
+CAR AGE korreleerub kõige rohkem INCOME tunnusega, lisaks korrelleerub ka tunnustega HOME_VALUE, AGE ja BLUEBOOK
+```{r fig.width=20, fig.height=20, warning=FALSE}
+library(psych)
+pairs.panels(carClaimsNums)
+```
+CAR AGE korreleerub kõige rohkem INCOME tunnusega (0.37), kaks teist suurema korrellatsiooniga tunnust HOME_VALUE(0.17) ja AGE (0.17). Diagrammil on näha ka kõik rühmitatud tunnused, näiteks KIDSDRIV, HOMEKIDS, CLAIM_FREQ, MVR_PTS.
+```{r fig.width=20, fig.height=20, warning=FALSE}
+library(corrplot)
+corrplot(cor(carClaimsNums))
+```
+CAR AGE korreleerub kõige rohkem INCOME, AGE ja HOME_VALUE tunnustega
+
+
+Meie hüpotees väidab, et kindlustus juhtumi andmete põhjal on võimalik auto vanust ennustada
+
+
+## MLR (sh sammregressioon)
+
+
+Jagame andmeid kaheks osaks TEST/TRAIN andmestikud proportsioonides 80%/20%
+
+
+Ehitame MLR mudel treeningandmetel, funktsioon-tunnusega Y=CAR_AGE
+```{r warning=FALSE}
+n = nrow(carClaims)
+RNGkind(sample.kind = "Rounding")
+set.seed(123)
+sample_index= sample(1:n,size=n,replace=F) #obj.indexit juhuslikult segatud
+#treeningandmed 80% 
+train = sample_index[1:floor(n*.80)] #treeningandmete indeksi
+test = sample_index[-train] #testandmete indeksid
+carClaims_train=carClaims[train,] #treeningandmed
+carClaims_test=carClaims[test,] #testandmed 
+```
+Loome MLR mudel treeningandmetel
+```{r warning=F}
+mudel <- lm(CAR_AGE ~ .,data = carClaims_train)
+summary(mudel)
+```
+Mudeli kirjeldusvõime R2~49%
+
+
+Mudeli RMSE:
+```{r warning=F}
+mudel_RMSE <- sqrt(sum(mudel$residuals^2)/length(mudel$residuals))
+mudel_RMSE
+```
+Teeme sammregressioon mudeli parandamiseks
+```{r warning=F}
+mudel_step <- step(mudel)
+summary(mudel_step)
+```
+Mudeli formula lihtsustatud sammregressiooni käigus, kuid mudeli kirjeldusvõime langunud 1% võrra, kirjeldusvõime R2~48%
+```{r fig.width=20, fig.height=10}
+par(mfrow=c(1,2))
+plot(mudel_step$fitted.values,mudel_step$residuals, xlab = "mudeli prognoosid", ylab = "mudeli jäägid", cex.lab=0.9)
+plot(mudel_step$fitted.values,mudel_step$residuals/sd(mudel_step$residuals), xlab = "mudeli prognoosid", ylab = "mudeli std. jäägid",cex.lab=0.9)
+```
+Näeme kolm põhilist vanusegrupi, transformeerime andmed vanusegruppideks
+
+
+Teisendame faktor tunnused arvulisteks andmeteks, vastavalt vanusegrupile, tühistame vanad andmed andmestikust.
+
+
+CAR AGE tunnus omab 25 erinevat väärtust, rühmitame need tunnused kolmeks vanusegrupiks, UUED, KESKMISED, VANAD autod
+
+
+UUED (<=5) = 1<br>
+KESKMISED (>5 & <=12) = 2<br>
+VANAD (>12) = 3<br>
+```{r warning=F}
+carClaims$CAR_AGE_GROUP[carClaims$CAR_AGE <= 5] <- 1
+carClaims$CAR_AGE_GROUP[carClaims$CAR_AGE > 5 & carClaims$CAR_AGE <= 12] <- 2
+carClaims$CAR_AGE_GROUP[carClaims$CAR_AGE > 12] <- 3
+carClaims = carClaims[,-c(23)]
+```
+Värskendame tüübid jälle, arvulised muudame int-ks (int võtab vähem mälu kui numbriline)
+```{r warning=F}
+carClaims <- type.convert(carClaims)
+```
+Uurime andmestiku kokkuvõtet
+```{r warning=F}
+summary(carClaims)
+```
+Veendume, et kõik arvulised väärtused oleksid INT-tüüpi ja uuendame tööandmestiku üle.
+```{r warning=F}
+carClaimsNums <- carClaims[,c(1:5,7,12,14,15,18,19,21,22,24)]
+carClaimsFactors <- carClaims[,c(6,8:11,13,16,17,20,23)]
+str(carClaimsNums)
+str(carClaimsFactors)
+```
+Uuendame TEST/TRAIN andmestikud, kasutame sama proportsioonid 80%/20%
+```{r warning=FALSE}
+n = nrow(carClaims)
+RNGkind(sample.kind = "Rounding")
+set.seed(123)
+sample_index= sample(1:n,size=n,replace=F) #obj.indexit juhuslikult segatud
+#treeningandmed 80% 
+train = sample_index[1:floor(n*.80)] #treeningandmete indeksi
+test = sample_index[-train] #testandmete indeksid
+carClaims_train_transf=carClaims[train,] #treeningandmed
+carClaims_test_transf=carClaims[test,] #testandmed 
+```
+Ehitame mudeli uuesti et ennustada vanuse grupi vanuse asemel.
+```{r warning=F}
+mudel_transf <- lm(CAR_AGE_GROUP ~ .,data = carClaims_train_transf)
+summary(mudel_transf)
+mudel_RMSE <- sqrt(sum(mudel_transf$residuals^2)/length(mudel_transf$residuals))
+mudel_RMSE
+```
+Transformeerimitud andmestiku baasil mudeli R2~43%, tulemus on 5% võrra väiksem.
+```{r warning=F}
+mudel_step_transf <- step(mudel_transf)
+summary(mudel_step_transf)
+```
+Mudeli R2~42%, ei parandanud mudelit, kuid saime lihtsamat formulat mis ei sisalda üleliigseid tunnuseid
+
+
+Kuna meie mudel etitatud Y tunnuse ennustamiseks, mis on kategoriaalne tunnus, hakkame kasutama disklriminantanalüüsi.
+
+## Diskriminantanalüüs
+
+Konstrueerime LDA mudeli
+```{r warning=F}
+library(MASS)
+cars.lda = lda(CAR_AGE~.,data=carClaims_train)
+summary(cars.lda)
+yfit = predict(cars.lda,newdata=carClaims_test)
+```
+counts=23, mis näitab et andmestikus on 23 erinevat tunnust
+
+
+Kontrollime mudeli headust, koostame funktsiooni
+```{r warning=F}
+misclass = function(fit,y) {
+ temp <- table(fit,y)
+ cat("Table of Misclassification\n")
+ cat("(row = predicted, col = actual)\n")
+ print(temp)
+ cat("\n\n")
+ numcor <- sum(diag(temp))
+ numinc <- length(y) - numcor
+ mcr <- numinc/length(y)
+ cat(paste("Misclassification Rate = ",format(mcr,digits=3)))
+ cat("\n")
+}
+
+library(MASS)
+misclass(yfit$class,carClaims_test$CAR_AGE)
+```
+65% treenimisandmestiku objektidest on valesti klassifitseeritud, kui me kasutame CAR_AGE rühmituna
+
+
+Võrdleme PLOT graafikud, Rühmatu CAR_AGE VS Rühmitatud CAR_AGE
+```{r warning=F}
+library(MASS)
+cars.lda = lda(CAR_AGE_GROUP~.,data=carClaims_train_transf)
+summary(cars.lda)
+yfit = predict(cars.lda,newdata=carClaims_test_transf)
+```
+counts=3, mis näitab et andmestikus on 3 erinevat tunnust
+```{r warning=F}
+misclass = function(fit,y) {
+ temp <- table(fit,y)
+ cat("Table of Misclassification\n")
+ cat("(row = predicted, col = actual)\n")
+ print(temp)
+ cat("\n\n")
+ numcor <- sum(diag(temp))
+ numinc <- length(y) - numcor
+ mcr <- numinc/length(y)
+ cat(paste("Misclassification Rate = ",format(mcr,digits=3)))
+ cat("\n")
+}
+
+
+library(MASS)
+misclass(yfit$class,carClaims_test_transf$CAR_AGE_GROUP)
+```
+33,7% treenimisandmestiku objektidest on valesti klassifitseeritud, kui me kasutame CAR_AGE rühmitatuna, tulemus on paremaks muutunud
+```{r fig.width=20, fig.height=10}
+par(mfrow=c(1,2))
+plot(mudel_step_transf$fitted.values,mudel_step_transf$residuals, xlab = "mudeli prognoosid", ylab = "mudeli jäägid", cex.lab=0.9)
+plot(mudel_step_transf$fitted.values,mudel_step_transf$residuals/sd(mudel_step_transf$residuals), xlab = "mudeli prognoosid", ylab = "mudeli std. jäägid",cex.lab=0.9)
+```
+On näha et andmed grupperitud kolmeks vanusegruppiks.
+
+
+Võrdleme kaks step mudelit
+
+
+Kontrollime jääkide normaalsust ka shapiro.test() abil:
+```{r warning=F}
+shapiro.test(mudel_step$residuals)
+shapiro.test(mudel_step_transf$residuals)
+```
+Testi tulemusena saame, et p-value < 0.05. Kuna testi olulisustõenäosus (p-value) on praegu olulisuse nivoost 0.05 väiksem, saame tõestatuks lugeda, et jäägid ei ole normaaljaotusega.
+
+
+Jääkide erinevus noormaaljaotusest tähendab, et mudeli on võimalik parandada, kasutades nt mittelineaarset mudelit või eemaldades andmetest erindid.
+
+
+Kontrollime erindeid
+```{r warning=F}
+mudel_step$residuals[abs(mudel_step$residuals/sd(mudel_step$residuals))>4]
+mudel_step_transf$residuals[abs(mudel_step_transf$residuals/sd(mudel_step_transf$residuals))>4]
+```
+Eridina esineb 0 objekti
+
+
+Võrdleme mõlemate mudelite RMSE
+```{r warning=F}
+mudel_RMSE <- sqrt(sum(mudel_step$residuals^2)/length(mudel_step$residuals))
+mudel_RMSE
+
+mudel_RMSE <- sqrt(sum(mudel_step_transf$residuals^2)/length(mudel_step_transf$residuals))
+mudel_RMSE
+```
+mudel_step mudeli RMSE = 3.696065
+
+
+mudel_step_transf mudeli RMSE = 0.5291643, tulemus on parem, kuna andmed gruppeeritud 
+```{r warning=F}
+library(DT)
+predict2 <- predict(mudel_step,newdata=carClaims_test)
+carClaims_test$predict <- predict2
+datatable(carClaims_test, options = list(pageLength = 20, scrollY = 300, scroller = TRUE, scrollX = T))
+```
+
+```{r warning=F}
+library(DT)
+predict2 <- predict(mudel_step_transf,newdata=carClaims_test)
+carClaims_test_transf$predict <- predict2
+datatable(carClaims_test_transf, options = list(pageLength = 20, scrollY = 300, scroller = TRUE, scrollX = T))
+```
+Tulemuste võrdlemine
+
+
+Antud diagrammidel vasakult auto vanus ei ole rühmitatud, paremalt pool rühmitatud
+```{r fig.width=20, fig.height=5}
+par(mfrow=c(1,2))
+plot(carClaims_test$predict,(carClaims_test$CAR_AGE-carClaims_test$predict)/sd(carClaims_test$CAR_AGE-carClaims_test$predict), xlab = "mudeli prognoosid", ylab = "mudeli std. jäägid",cex.lab=0.9)
+lines(smooth.spline(carClaims_test$predict,(carClaims_test$CAR_AGE-carClaims_test$predict)/sd(carClaims_test$CAR_AGE-carClaims_test$predict),spar=0.8), col='red', lwd=2)
+plot(carClaims_test_transf$predict,(carClaims_test_transf$CAR_AGE_GROUP-carClaims_test_transf$predict)/sd(carClaims_test_transf$CAR_AGE_GROUP-carClaims_test_transf$predict), xlab = "mudeli prognoosid", ylab = "mudeli std. jäägid",cex.lab=0.9)
+lines(smooth.spline(carClaims_test_transf$predict,(carClaims_test_transf$CAR_AGE_GROUP-carClaims_test_transf$predict)/sd(carClaims_test_transf$CAR_AGE_GROUP-carClaims_test_transf$predict),spar=0.8), col='red', lwd=2)
+```
+Võrdleme graafiliselt
+
+
+Auto vanus ei ole rühmitatud
+```{r warning=F}
+par(mfrow=c(2,2))
+plot(lm(mudel_step))
+```
+Auto vanus rühmitatud
+```{r warning=F}
+par(mfrow=c(2,2))
+plot(lm(mudel_step_transf))
+```
+Kontrollime multikollineaarsust
+
+
+Auto vanus ei ole rühmitatud
+```{r warning=F, message=FALSE}
+library(car)
+vif(mudel_step)
+```
+Auto vanus rühmitatud
+```{r warning=F, message=FALSE}
+library(car)
+vif(mudel_step_transf)
+```
+vif < 5, mis näitab et multikollineaarsust ei ole.
+
+
+Võrdleme mudeli prognoose tunnuse Y tegelike väärtustega fitted/predicted vs actual diagrammil. Ideaalis punktid peavad paiknema y=x punasel joonel. Scatterploti siledav sinine joon näitab tegelikku tendentsi.
+
+
+Auto vanus ei ole rühmitatud vs Auto vanus rühmitatud
+```{r fig.width=20, fig.height=10, warning=FALSE}
+par(mfrow=c(1,2))
+plot(carClaims_train$CAR_AGE,mudel_step$fitted.values,xlab="Actual Car Age",ylab="Predicted Car Age", main = "Rühmatu andmetega mudel")
+abline(0,1,lwd=2,col="red")
+lines(loess.smooth(carClaims_train$CAR_AGE,mudel_step$fitted.values), col='blue', lwd=2)
+plot(carClaims_train_transf$CAR_AGE_GROUP,mudel_step_transf$fitted.values,xlab="Actual Car Age Group",ylab="Predicted Car Age Group", main = "Rühmitatud andmetega mudel")
+abline(0,1,lwd=2,col="red")
+lines(loess.smooth(carClaims_train_transf$CAR_AGE_GROUP,mudel_step_transf$fitted.values), col='blue', lwd=2,)
+```
+Gruppeeritud andmetega diagrammil on andmed 1-3ni, ja gruppeerimata 1-25
+
+
+On näha et mudel üsna ebatäpne
+
+
+Mudeli käitumine testandmetel
+```{r warning=F}
+ypred <- predict(mudel_step_transf,newdata=carClaims_test_transf)
+y_test <- carClaims_test_transf[,24]
+par(mfrow=c(1,2))
+plot(y_test,ypred,xlab="Actual",ylab="Predicted")
+abline(0,1,lwd=2,col="red")
+plot(ypred,(y_test-ypred)/sd(y_test-ypred),xlab="Predicted Values",ylab="Std.residuals")
+abline(h=0,lwd=2,col="red", lty=2)
+```
+
+```{r warning=F}
+cor(y_test, ypred)^2 # R-squared
+```
+Testandmetel mudeli viga on R2=0.4571229
+
+
+Saame vea väärtust ka testandmetel korduvalt mõõta (Monte Carlo Split-Sample Cross-validation):
+```{r warning=F}
+test.cv = function(mudel,y,data,p=.2,k=20)
+{
+ n = length(y)
+ cv_rmse <- rep(0,k)
+ cv_r2 <-  rep(0,k)
+ for (i in 1:k) {
+ sam <- sample(1:n,floor(n*p),replace=F)
+ ypred <- predict(mudel,newdata=data[-sam,])
+ cv_rmse[i] <- sqrt(mean((y[-sam]-ypred)^2))
+ cv_r2[i] <-cor(y[-sam], ypred)^2
+ }
+ out <- c(mean(cv_rmse),mean(cv_r2))
+ names(out) <- c("RMSE","Rsquared")
+ out
+}
+test.cv(mudel_step_transf,carClaims_test_transf[,24],carClaims_test_transf,p=.2,k=20)
+```
+Proovime faktorandmete teisendamist
+```{r warning=F, message=FALSE}
+library(caret)
+carClaims.PP = preProcess(carClaims_train_transf, method = list(BoxCox = c("CAR_AGE_GROUP"),YeoJohnson=c("PARENT1","MSTATUS","GENDER", "EDUCATION", "OCCUPATION", "CAR_USE", "CAR_TYPE", "RED_CAR", "REVOKED")))
+carClaims.PP
+```
+Box-cox
+```{r warning=F}
+carClaims.PP$bc
+```
+Box-com pakub ainult üks väärtus labmdaga=0 ja ignoreerib 10 ülejäänud tunnust.
+
+
+Yeo-Johnsoni ei kasutatud faktooride jaoks, seega on see NULL
+```{r warning=F}
+carClaims$PP$yj
+```
+Prognoositava tunnuse Y teisendamine. Dispersiooni stabiliseerimine.
+```{r warning=F}
+summary(powerTransform(carClaims_train_transf$CAR_AGE_GROUP))
+```
+Tõenäosuse suhte test, et muundamist pole vaja.
+
+
+LDA tulemuste visualiseerimine
+```{r warning=F}
+plot(yfit$x[,1],yfit$x[,2],type="n",xlab="Discriminant",
+ ylab="Discriminant",main="Car Age Group Names")
+text(yfit$x[,1],yfit$x[,2],as.character(yfit$class),col=as.numeric(yfit$class)+1,
+ cex=1)
+yfit_test = predict(cars.lda,newdata=carClaims_test_transf[,-24])
+```
+Rühmad on hästi eraldatud
+
+
+Lisame eelmisele graafikule veel prognoosid
+```{r warning=F}
+plot(yfit$x[,1],yfit$x[,2],type="n",xlab="Discriminant",
+ ylab="Discriminant",main="Car Age Groups + Predicted")
+text(yfit$x[,1],yfit$x[,2],as.character(yfit$class),col=as.numeric(yfit$class)+1,
+ cex=1)
+yfit_test = predict(cars.lda,newdata=carClaims_test_transf[,-24])
+text(yfit_test$x[,1],yfit_test$x[,2],as.character(yfit_test$class),cex=.8)
+```
+On näha et ennustatavad tunnused asuvad sarnastes asukohtades graafiku peal kui ka tõelised andmed
+
+
+# Kokkuvõte
+
+
+Prjektis sooritati järgmised etapid:
+
+
+1. andmete ettevalmistamine, puhastamine<br>
+2. andmete kirjeldamine ja esmaanalüüs<br>
+3. mitmemõõtmeline lineaarne regressioon (MLR) (sh sammregressioon)<br>
+4. MLR parandamise võtmed (muutujate teisendamine, mittelineaarsete komponentide lisamine, erindite ja multikollineaarsuse eemaldamine)<br>
+5. diskriminantanalüüs
+
+
+Uurimuse käigus saadi tulemused järgnevalt:<br>
+1) mitmemõõtmeline lineaarne regressioon mudeli kirjeldusvõime:<br>
+rühmatu andmete mudel = 49%<br>
+rühmatu andmete mudel RMSE = 3.673968<br>
+rühmatu andmete step mudel = 48%<br>
+rühmatu andmete step mudel RMSE = 3.696065
+
+
+rühmitatud andmete mudel = 43%<br>
+rühmitatud andmete mudel RMSE = 0.5265627<br>
+rühmitatud andmete step mudel = 42%<br>
+rühmitatud andmete step mudel RMSE = 0.5291643
+
+
+rühmatu LDA mudeli misclassification Rate =  0.65<br>
+rühmitatud LDA mudeli misclassification Rate =  0.34
+
+
+Esmaanalüüs näitab , et andmed on hästi rühmitatud ning hea tulemuse saavutamiseks tuleb enustada vanuse rühma täpse vanuse asemel. Autovanuse ennustamise kindlustusjuhtumi andmete järgi jaoks kasutasime autode vanuste rühmitamine ja diskriminantanalüüsi. LDA mudel gruppeeritud andmetel annab täpsema ennustamisvõimet (0.34 vs 0.65). MLR mudeli jaoks sammregressioon lihtsustab formulat kuid tähtsusetult vähendab kirjeldamisvõimet (1% võrra), samas kergelt suurendab RMSE.
+
+
+Ei olnud vajadust Box-cox ja Yeo-Johnsoni teisendamises, kuna see ei paranda mudelit
+
+
+# Kasutatud materjalid
+
+1. Projektis on kasustatud kursuses MEM5210 Mitmemõõtmeline statistiline analüüs esitatud õppematerialid ja harjutused.<br>
+2. https://www.kaggle.com/xiaomengsun/car-insurance-claim-data
+
+
+# Lisa
+
+
+![Andmestiku kirjeldus](dataset.png)
