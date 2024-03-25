@@ -1,0 +1,23 @@
+{
+  "data": {
+    "id": 1,
+    "attributes": {
+      "name": "Maiar Ghosts",
+      "author": "Gokai Labs",
+      "description": "Mr Ghosts is a collection designed to haunt Maiar forever. Mint in peace. First drop of 666 coming soon.",
+      "avatar": "https://gateway.pinata.cloud/ipfs/QmPGVLy1CpLgXUfcSGQGNVGALxuC1qRNNncrZTimM2jsJw",
+      "banner": "https://gateway.pinata.cloud/ipfs/QmdWJRDfBRkH5ZXg5tq3UTXpXvRDoJEf1BC3VMac3DMm9z",
+      "profileAuthor": "https://gateway.pinata.cloud/ipfs/QmYbTCjDTUquiFVqH61mqVsUF2qDriYMqe4ocUzH3CKbPQ",
+      "maxSupply": "666",
+      "owners": "193",
+      "floorPrice": "0.1",
+      "volumeTraded": "8",
+      "marketCap": "1323",
+      "highestSale": "13",
+      "createdAt": "2021-12-17T09:29:01.412Z",
+      "updatedAt": "2021-12-17T13:56:13.848Z",
+      "publishedAt": "2021-12-17T13:56:13.843Z"
+    }
+  },
+  "meta": {}
+}

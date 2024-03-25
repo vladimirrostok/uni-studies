@@ -1,0 +1,17 @@
+{
+  "data": {
+    "id": 1,
+    "attributes": {
+      "tab1": "Trending",
+      "tab2": "Top",
+      "tab3": "Art",
+      "tab4": "Music",
+      "tab5": "Virtual Worlds",
+      "tab6": "Trading Cards",
+      "tab7": "Collectible",
+      "tab8": "Utility",
+      "tab9": "P2E"
+    }
+  },
+  "meta": {}
+}

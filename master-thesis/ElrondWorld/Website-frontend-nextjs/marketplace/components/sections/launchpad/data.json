@@ -1,0 +1,19 @@
+{
+  "data": {
+    "id": 1,
+    "attributes": {
+      "headline": "Profile",
+      "name": "Gokai Labs",
+      "herotag": "@gokai",
+      "address": "erd1kj...koagi",
+      "collectionName": "Maiar Ghosts",
+      "pic": "https://gateway.pinata.cloud/ipfs/QmYbTCjDTUquiFVqH61mqVsUF2qDriYMqe4ocUzH3CKbPQ",
+      "banner": "https://gateway.pinata.cloud/ipfs/QmPGVLy1CpLgXUfcSGQGNVGALxuC1qRNNncrZTimM2jsJw",
+      "bio": "We are a passionate and creative team that takes the time to build things for you on the Elrond Network.",
+      "createdAt": "2021-12-17T09:29:01.412Z",
+      "updatedAt": "2021-12-20T15:17:32.148Z",
+      "publishedAt": "2021-12-17T13:56:13.843Z"
+    }
+  },
+  "meta": {}
+}
