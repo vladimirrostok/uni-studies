@@ -1,0 +1,44 @@
+alerts:
+- rule: DEPLOYMENT_FAILED
+- rule: DOMAIN_FAILED
+databases:
+- cluster_name: #< AUTO ADDED BY DO#
+  db_name: #< AUTO ADDED BY DO#
+  db_user: #< AUTO ADDED BY DO#
+  engine: #< AUTO ADDED BY DO#
+  name: #< AUTO ADDED BY DO#
+  production: #< AUTO ADDED BY DO#
+  version: #< AUTO ADDED BY DO#
+name: strapi-cms
+region: #< AUTO ADDED BY DO#
+services:
+- build_command: NODE_ENV=production yarn strapi build
+  environment_slug: node-js
+  envs:
+  - key: DATABASE_HOST
+    scope: RUN_AND_BUILD_TIME
+    value: #ENTER_HERE_YOUR_ENV_VALUE#
+  - key: DATABASE_PORT
+    scope: RUN_AND_BUILD_TIME
+    value: #ENTER_HERE_YOUR_ENV_VALUE#
+  - key: DATABASE_NAME
+    scope: RUN_AND_BUILD_TIME
+    value: #ENTER_HERE_YOUR_ENV_VALUE#
+  - key: DATABASE_USERNAME
+    scope: RUN_AND_BUILD_TIME
+    value: #ENTER_HERE_YOUR_ENV_VALUE#
+  - key: DATABASE_PASSWORD
+    scope: RUN_AND_BUILD_TIME
+    value: #ENTER_HERE_YOUR_ENV_VALUE#
+  github:
+    branch: master
+    deploy_on_push: true
+    repo: #< AUTO ADDED BY DO#
+  http_port: #< AUTO ADDED BY DO#
+  instance_count: 1
+  instance_size_slug: basic-xxs
+  name: strapi-cms
+  routes:
+  - path: /
+  run_command: NODE_ENV=production yarn strapi start
+  source_dir: /

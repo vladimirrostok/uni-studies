@@ -1,0 +1,5 @@
+Build Command
+NODE_ENV=production yarn strapi build
+
+Run Command
+NODE_ENV=production yarn strapi start

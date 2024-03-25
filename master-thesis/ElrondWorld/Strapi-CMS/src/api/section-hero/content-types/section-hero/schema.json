@@ -1,0 +1,22 @@
+{
+  "kind": "singleType",
+  "collectionName": "section_heroes",
+  "info": {
+    "singularName": "section-hero",
+    "pluralName": "section-heroes",
+    "displayName": "section-hero",
+    "description": ""
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "headline": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    }
+  }
+}
