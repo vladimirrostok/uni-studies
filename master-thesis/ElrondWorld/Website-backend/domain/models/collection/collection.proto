@@ -1,0 +1,10 @@
+// protoc --gofast_out=. collection.proto
+syntax = "proto3";
+
+package collection;
+
+message CollectionCreatedEvent {
+  string CollectionID = 1;
+  string Name = 2;
+  uint32 Version = 255;
+}

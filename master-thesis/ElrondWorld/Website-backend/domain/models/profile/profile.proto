@@ -1,0 +1,16 @@
+// protoc --gofast_out=. profile.proto
+syntax = "proto3";
+
+package profile;
+
+message ProfileCreatedEvent {
+  string ProfileID = 1;
+  string WalletAddress = 2;
+  uint32 Version = 255;
+}
+
+message ProfileUpdatedEvent {
+  string ProfileID = 1;
+  string WalletAddress = 2;
+  uint32 Version = 255;
+}
