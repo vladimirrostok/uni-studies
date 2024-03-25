@@ -6,6 +6,7 @@ Collection of my uni-projects
   - [Golang Back-end code](/master-thesis/marketplace-app-source/Website-backend/)
   - [Rust Elrond/MultiversX NFT marketplace smart-contract](/master-thesis/marketplace-app-source/smart-contracts/)
   - [Strapi CMS](/master-thesis/marketplace-app-source/Strapi-CMS/)
+  - [Figma concept design project](/master-thesis/marketplace-app-source/Figma-concept/)
 
 * [Applied Machine Learning project (Python + Article)](/applied-machine-learning/)
 * [Data visualization project (RStudio + app)](/data-visualization-rstudio/)
