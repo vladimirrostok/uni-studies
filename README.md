@@ -1,4 +1,7 @@
-Collection of my uni-projects
+Collection of my uni-projects dated by 2022.
+
+1. BSc in Applied Information Technology - Sofware Programming
+2. MSc in Business Information Technology - Data Analysis and Intelligent Systems.
 
 - [Bachelor's thesis](/bachelor-thesis/)
 - [Master's Thesis](/master-thesis/)
